@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>CHARLI'S COKE RUN</title>
+<meta name="theme-color" content="#8ACE00" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --brat: #8ACE00;
+    --ink: #101010;
+    --void: #050505;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #020202;
+    overflow: hidden;
+    font-family: "Press Start 2P", monospace;
+    color: var(--ink);
+    user-select: none;
+    touch-action: none;
+    image-rendering: pixelated;
+  }
+  #wrap {
+    position: fixed; inset: 0;
+    display: grid; place-items: center;
+    background:
+      radial-gradient(ellipse at center, #111 0%, #000 70%),
+      repeating-linear-gradient(90deg, #0a0a0a 0 8px, #050505 8px 16px);
+  }
+  canvas#c {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #000;
+    box-shadow:
+      0 0 0 6px #111,
+      0 0 0 10px var(--brat),
+      0 0 40px rgba(138,206,0,.25);
+  }
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s steps(3);
+    z-index: 5;
+    text-align: center;
+    padding: 16px;
+  }
+  .screen.on { opacity: 1; pointer-events: auto; }
+  .screen.green { background: var(--brat); }
+  .screen.dim { background: rgba(0,0,0,.72); }
+  .pix {
+    font-family: "Press Start 2P", monospace;
+    text-transform: uppercase;
+    line-height: 1.35;
+    image-rendering: pixelated;
+  }
+  .presents {
+    font-size: clamp(8px, 2.1vw, 12px);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+    animation: blink 1.1s steps(2) infinite;
+  }
+  .title {
+    font-size: clamp(16px, 5.2vw, 34px);
+    line-height: 1.25;
+  }
+  .sub {
+    margin-top: 16px;
+    font-size: clamp(8px, 2vw, 11px);
+  }
+  .rules {
+    margin-top: 22px;
+    max-width: 520px;
+    font-size: clamp(7px, 1.7vw, 10px);
+    line-height: 1.7;
+  }
+  .hint {
+    position: absolute;
+    bottom: 7vh;
+    left: 0; right: 0;
+    font-size: clamp(8px, 2vw, 11px);
+    animation: blink 0.8s steps(2) infinite;
+  }
+  .hud {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    font-family: "Press Start 2P", monospace;
+  }
+  .hud.on { opacity: 1; }
+  .topbar {
+    position: absolute; top: 12px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between;
+    color: var(--brat);
+    font-size: clamp(8px, 2vw, 11px);
+    text-shadow: 2px 2px 0 #000;
+  }
+  .fuelwrap {
+    position: absolute; left: 12px; right: 12px; bottom: 14px;
+  }
+  .fuellabel {
+    color: var(--brat);
+    font-size: 8px;
+    margin-bottom: 6px;
+    text-shadow: 2px 2px 0 #000;
+  }
+  .fueltrack {
+    height: 10px;
+    background: #111;
+    border: 2px solid var(--brat);
+    image-rendering: pixelated;
+  }
+  .fuelfill {
+    height: 100%;
+    width: 100%;
+    background: repeating-linear-gradient(90deg, var(--brat) 0 6px, #6aa000 6px 8px);
+  }
+  .fuelfill.low {
+    background: repeating-linear-gradient(90deg, #ff3030 0 6px, #990000 6px 8px);
+  }
+  .go-card {
+    background: var(--brat);
+    border: 4px solid #000;
+    outline: 4px solid var(--brat);
+    padding: 22px 16px 18px;
+    width: min(92vw, 420px);
+  }
+  .go-card h2 { font-size: clamp(14px, 4vw, 22px); margin-bottom: 12px; }
+  .go-card p { font-size: clamp(8px, 2vw, 10px); }
+  .go-card .big { margin: 16px 0 6px; font-size: clamp(12px, 3vw, 16px); }
+  .btn {
+    margin-top: 16px;
+    border: 3px solid #000;
+    background: #000;
+    color: var(--brat);
+    font-family: "Press Start 2P", monospace;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 9px;
+  }
+  .btn:hover { background: #111; }
+  .scan {
+    position: fixed; inset: 0; pointer-events: none; z-index: 8;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,.18) 0px,
+      rgba(0,0,0,.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    opacity: .45;
+  }
+  .flash {
+    position: fixed; inset: 0; z-index: 7; pointer-events: none;
+    opacity: 0;
+  }
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div class="scan"></div>
+  <div class="flash" id="flash"></div>
+
+  <div class="screen green on" id="boot">
+    <div class="pix" style="font-size:clamp(28px,10vw,64px)">BRAT</div>
+    <div class="pix" style="margin-top:18px;font-size:10px">8-BIT CABINET BOOT</div>
+  </div>
+
+  <div class="screen green" id="title">
+    <div class="presents pix">swiftiexzquad presents</div>
+    <h1 class="title pix">CHARLI'S<br>COKE RUN</h1>
+    <div class="sub pix">ARCADE EDITION</div>
+    <div class="rules pix">
+      GRAB COKE TO REFUEL<br>
+      DODGE SPOONS + TTPD<br>
+      1 HIT = GAME OVER<br>
+      ARROWS / A D / TAP SIDES
+    </div>
+    <div class="hint pix">PRESS START</div>
+  </div>
+
+  <div class="hud" id="hud">
+    <div class="topbar">
+      <div>MILES<br><span id="dist">0.0</span></div>
+      <div style="text-align:right">BEST<br><span id="best">0</span></div>
+    </div>
+    <div class="fuelwrap">
+      <div class="fuellabel">FUEL</div>
+      <div class="fueltrack"><div class="fuelfill" id="fuelbar"></div></div>
+    </div>
+  </div>
+
+  <div class="screen dim" id="over">
+    <div class="go-card">
+      <h2 class="pix" id="overtitle">OUT OF FUEL</h2>
+      <p class="pix" id="overmsg">THE PARTY STOPPED</p>
+      <div class="big pix" id="overscore">0.0 MILES</div>
+      <button class="btn" id="again">INSERT COIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const view = document.getElementById("c");
+  const vctx = view.getContext("2d");
+  const boot = document.getElementById("boot");
+  const title = document.getElementById("title");
+  const hud = document.getElementById("hud");
+  const over = document.getElementById("over");
+  const fuelbar = document.getElementById("fuelbar");
+  const distEl = document.getElementById("dist");
+  const bestEl = document.getElementById("best");
+  const overscore = document.getElementById("overscore");
+  const overmsg = document.getElementById("overmsg");
+  const overtitle = document.getElementById("overtitle");
+  const flashEl = document.getElementById("flash");
+
+  const BRAT = "#8ACE00";
+  const VW = 160;  // internal pixel width
+  const VH = 240;  // internal pixel height
+  const px = document.createElement("canvas");
+  px.width = VW;
+  px.height = VH;
+  const ctx = px.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const LANES = 3;
+  let state = "boot";
+  let last = 0;
+  let shake = 0;
+
+  const quotes = {
+    fuel: [
+      "TANK DRY. PARTY OVER.",
+      "NO COKE. NO CLUB.",
+      "360 BUT THE ENGINE DIED.",
+    ],
+    spoon: [
+      "SPOONED OFF THE HIGHWAY.",
+      "CHARLI ATE THE SPOON. BAD IDEA.",
+      "THAT WAS NOT A STRAW.",
+    ]
+  };
+
+  const audio = {
+    ctx: null,
+    muted: false,
+    ensure() {
+      if (this.ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+    },
+    tone(freq, dur, type, gain, when) {
+      if (!this.ctx || this.muted) return;
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = type || "square";
+      o.frequency.value = freq;
+      g.gain.value = gain || 0.05;
+      o.connect(g); g.connect(this.ctx.destination);
+      const t = when || this.ctx.currentTime;
+      g.gain.setValueAtTime(gain || 0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur + 0.02);
+    },
+    kick() { this.tone(80, 0.09, "square", 0.07); },
+    hat() { this.tone(1200, 0.02, "square", 0.015); },
+    collect() { this.tone(520, 0.05, "square", 0.06); this.tone(780, 0.08, "square", 0.04, this.ctx.currentTime + 0.05); },
+    crash() { this.tone(90, 0.25, "sawtooth", 0.08); this.tone(40, 0.5, "square", 0.06); },
+    stall() { this.tone(70, 0.6, "square", 0.05); }
+  };
+
+  const game = {
+    lane: 1,
+    targetLane: 1,
+    fuel: 100,
+    speed: 0,
+    dist: 0,
+    best: Number(localStorage.getItem("ccr_best_px") || 0),
+    items: [],
+    lights: [],
+    spawn: 0,
+    time: 0,
+    beat: 0,
+    invuln: 0
+  };
+  bestEl.textContent = game.best.toFixed(1);
+
+  function fitView() {
+    const maxW = innerWidth * 0.92;
+    const maxH = innerHeight * 0.92;
+    const scale = Math.floor(Math.min(maxW / VW, maxH / VH));
+    const s = Math.max(2, scale);
+    view.width = VW * s;
+    view.height = VH * s;
+    view.style.width = (VW * s) + "px";
+    view.style.height = (VH * s) + "px";
+    vctx.imageSmoothingEnabled = false;
+  }
+  window.addEventListener("resize", fitView);
+  fitView();
+
+  function project(z, lane) {
+    const t = 1 - Math.max(0, Math.min(1, z));
+    const y = Math.floor(86 + Math.pow(t, 1.25) * 140);
+    const roadW = Math.floor(28 + t * 118);
+    const laneW = roadW / LANES;
+    const x = Math.floor(VW / 2 + (lane - 1) * laneW);
+    const scale = 0.35 + t * 1.4;
+    return { x, y, scale, roadW, t };
+  }
+
+  function spawnItem(z, forceType) {
+    const last = game.items[game.items.length - 1];
+    let lane = Math.floor(Math.random() * 3);
+    if (last && last.lane === lane && Math.random() < 0.7) {
+      lane = (lane + 1 + (Math.random() < 0.5 ? 1 : 0)) % 3;
+    }
+    const d = game.dist;
+    let type = forceType || "coke";
+    if (!forceType) {
+      const danger = Math.min(0.28, 0.08 + d * 0.012);
+      if (Math.random() < danger) {
+        type = Math.random() < 0.5 ? "spoon" : "ttpd";
+      }
+    }
+    game.items.push({ z: z ?? 1, lane, type, hit: false, wob: Math.random() * 6 });
+  }
+
+  function resetGame() {
+    game.lane = 1;
+    game.targetLane = 1;
+    game.fuel = 100;
+    game.speed = 0;
+    game.dist = 0;
+    game.items = [];
+    game.lights = [];
+    game.spawn = 0.25;
+    game.time = 0;
+    game.beat = 0;
+    game.invuln = 0.4;
+    for (let i = 0; i < 10; i++) {
+      game.lights.push({
+        z: i / 10,
+        side: i % 2 === 0 ? -1 : 1,
+        col: i % 3 === 0 ? BRAT : (i % 3 === 1 ? "#ff4fd8" : "#3cf")
+      });
+    }
+    spawnItem(0.40, "coke");
+    spawnItem(0.70, "coke");
+    spawnItem(1.0, "coke");
+  }
+
+  function startGame() {
+    resetGame();
+    state = "play";
+    title.classList.remove("on");
+    over.classList.remove("on");
+    hud.classList.add("on");
+    audio.ensure();
+    if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+  }
+
+  function gameOver(kind) {
+    state = "over";
+    hud.classList.remove("on");
+    const crashed = kind === "ttpd" || kind === "spoon";
+    if (crashed) audio.crash();
+    else audio.stall();
+
+    if (kind === "ttpd") {
+      overtitle.textContent = "TTPD";
+      overmsg.textContent = "TTPD BLOCKED CHARLI";
+    } else if (kind === "spoon") {
+      overtitle.textContent = "SPOONED";
+      overmsg.textContent = quotes.spoon[Math.floor(Math.random() * quotes.spoon.length)];
+    } else {
+      overtitle.textContent = "OUT OF FUEL";
+      overmsg.textContent = quotes.fuel[Math.floor(Math.random() * quotes.fuel.length)];
+    }
+
+    if (game.dist > game.best) {
+      game.best = game.dist;
+      localStorage.setItem("ccr_best_px", String(game.best));
+      bestEl.textContent = game.best.toFixed(1);
+      overmsg.textContent = (kind === "ttpd" ? "TTPD BLOCKED CHARLI — " : "") + "NEW HIGH SCORE";
+    }
+
+    overscore.textContent = game.dist.toFixed(1) + " MILES";
+    over.classList.add("on");
+    flashEl.style.background = crashed ? "#ff2a4a" : BRAT;
+    flashEl.style.opacity = "0.55";
+    setTimeout(() => flashEl.style.opacity = "0", 120);
+  }
+
+  function grabCoke() {
+    game.fuel = Math.min(100, game.fuel + 14 + Math.random() * 5);
+    audio.collect();
+  }
+
+  function inputLane(dir) {
+    if (state !== "play") return;
+    game.targetLane = Math.max(0, Math.min(2, game.targetLane + dir));
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code)) e.preventDefault();
+    if ((state === "title" || state === "over") && (e.code === "Space" || e.code === "Enter")) startGame();
+    if (e.code === "ArrowLeft" || e.code === "KeyA") inputLane(-1);
+    if (e.code === "ArrowRight" || e.code === "KeyD") inputLane(1);
+  });
+  window.addEventListener("pointerdown", (e) => {
+    audio.ensure();
+    if (state === "play") {
+      const r = view.getBoundingClientRect();
+      if (e.clientX < r.left + r.width / 2) inputLane(-1);
+      else inputLane(1);
+    }
+  });
+  title.addEventListener("click", startGame);
+  document.getElementById("again").addEventListener("click", (e) => {
+    e.stopPropagation();
+    startGame();
+  });
+
+  setTimeout(() => {
+    boot.classList.remove("on");
+    setTimeout(() => { title.classList.add("on"); state = "title"; }, 120);
+  }, 1400);
+
+  function pset(x, y, w, h, col) {
+    ctx.fillStyle = col;
+    ctx.fillRect(Math.floor(x), Math.floor(y), Math.max(1, Math.floor(w)), Math.max(1, Math.floor(h)));
+  }
+
+  function drawSky() {
+    pset(0, 0, VW, 86, "#050510");
+    pset(0, 70, VW, 16, "#0b0b18");
+    // stars
+    ctx.fillStyle = "#d0d0d0";
+    for (let i = 0; i < 18; i++) {
+      const x = (i * 37 + Math.floor(game.time * 8)) % VW;
+      const y = (i * 13) % 70;
+      ctx.fillRect(x, y, 1, 1);
+    }
+    // pixel moon
+    pset(124, 14, 10, 10, BRAT);
+    pset(126, 16, 6, 6, "#b6e040");
+    // city blocks
+    for (let i = 0; i < 16; i++) {
+      const h = 6 + ((i * 5) % 14);
+      pset(i * 10, 86 - h, 9, h, "#101018");
+      if (i % 2 === 0) pset(i * 10 + 2, 86 - h + 2, 2, 2, i % 4 === 0 ? BRAT : "#ff4fd8");
+    }
+  }
+
+  function drawRoad() {
+    const y0 = 86;
+    for (let y = y0; y < VH; y++) {
+      const t = (y - y0) / (VH - y0);
+      const roadW = Math.floor(28 + t * 118);
+      const left = Math.floor(VW / 2 - roadW / 2);
+      const shade = t > 0.7 ? "#2a2a30" : t > 0.4 ? "#222228" : "#1a1a20";
+      pset(left, y, roadW, 1, shade);
+      // brat shoulders
+      pset(left - 3, y, 3, 1, (Math.floor(y + game.dist * 40) % 6 < 3) ? BRAT : "#335500");
+      pset(left + roadW, y, 3, 1, (Math.floor(y + game.dist * 40) % 6 < 3) ? BRAT : "#335500");
+    }
+    // lane dashes
+    for (let i = 0; i < 12; i++) {
+      const z = ((i / 12) + (game.dist * 1.8) % 1) % 1;
+      const p = project(z, 1);
+      if (p.y < 88 || p.y > VH - 4) continue;
+      const len = Math.max(2, Math.floor(2 + p.t * 8));
+      pset(Math.floor(VW / 2 - p.roadW / 6), p.y, 2, len, "#d4c24a");
+      pset(Math.floor(VW / 2 + p.roadW / 6), p.y, 2, len, "#d4c24a");
+    }
+  }
+
+  function drawLights() {
+    for (const L of game.lights) {
+      const p = project(L.z, 1);
+      const x = Math.floor(VW / 2 + L.side * (p.roadW / 2 + 4 + p.t * 6));
+      const h = Math.floor(4 + p.t * 16);
+      pset(x, p.y - h, 2, h, "#1a1a1a");
+      pset(x - 1, p.y - h - 2, 4, 3, L.col);
+    }
+  }
+
+  function drawCoke(p) {
+    const pos = project(p.z, p.lane);
+    const s = Math.max(2, Math.floor(3 + pos.t * 8));
+    const x = pos.x, y = pos.y;
+    pset(x - s, y - 1, s * 2, 3, "#3a3a40");
+    pset(x - s + 1, y - s, s * 2 - 2, s, "#f4f4f8");
+    pset(x - 1, y - s - 2, 3, 3, "#fff");
+    pset(x - s + 2, y - s + 1, 2, 2, BRAT);
+    if (pos.t > 0.45) {
+      ctx.fillStyle = "#111";
+      ctx.font = "4px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("COKE", x, y + s + 3);
+    }
+  }
+
+  function drawSpoon(p) {
+    const pos = project(p.z, p.lane);
+    const s = Math.max(3, Math.floor(4 + pos.t * 10));
+    const x = pos.x;
+    const y = pos.y;
+    // handle
+    pset(x - 1, y - s * 2 + 2, 3, s * 2, "#cfd3dc");
+    pset(x, y - s * 2 + 2, 1, s * 2, "#fff");
+    // neck
+    pset(x - 2, y - s * 2, 5, 3, "#bfc4ce");
+    // bowl
+    const bw = Math.max(6, Math.floor(s * 1.6));
+    const bh = Math.max(4, Math.floor(s * 0.9));
+    pset(x - Math.floor(bw / 2), y - s * 2 - bh + 1, bw, bh, "#e8eaef");
+    pset(x - Math.floor(bw / 2) + 1, y - s * 2 - bh + 2, bw - 2, bh - 2, "#9aa2ad");
+    pset(x - Math.floor(bw / 2) + 2, y - s * 2 - bh + 3, 2, 2, "#fff");
+    // little coke dust in the bowl
+    pset(x - 1, y - s * 2 - Math.floor(bh / 2), 3, 2, "#f6f6f8");
+  }
+
+  function drawTTPD(p) {
+    const pos = project(p.z, p.lane);
+    const x = pos.x;
+    const y = pos.y;
+    const size = Math.max(6, Math.floor(6 + pos.t * 8));
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold " + size + "px monospace";
+    ctx.fillStyle = "#111";
+    ctx.fillText("TTPD", x + 1, y + 1);
+    ctx.fillStyle = "#f4f0e6";
+    ctx.fillText("TTPD", x, y);
+    ctx.restore();
+  }
+
+  function drawItem(it) {
+    if (it.type === "coke") drawCoke(it);
+    else if (it.type === "spoon") drawSpoon(it);
+    else if (it.type === "ttpd") drawTTPD(it);
+  }
+
+  function drawCar() {
+    const x = Math.floor(VW / 2 + (game.lane - 1) * 28);
+    const y = 186;
+    // shadow
+    pset(x - 16, y + 22, 32, 4, "#000");
+    // car body
+    pset(x - 18, y + 8, 36, 14, BRAT);
+    pset(x - 14, y + 2, 28, 8, BRAT);
+    pset(x - 10, y - 2, 20, 6, "#151515");
+    // windshield
+    pset(x - 8, y - 1, 16, 5, "#2c5160");
+    pset(x - 6, y, 6, 2, "#7ec8d8");
+    // wheels
+    pset(x - 16, y + 16, 8, 7, "#111");
+    pset(x + 8, y + 16, 8, 7, "#111");
+    pset(x - 14, y + 18, 4, 3, "#666");
+    pset(x + 10, y + 18, 4, 3, "#666");
+    // tail lights
+    pset(x - 17, y + 10, 4, 3, "#ff2448");
+    pset(x + 13, y + 10, 4, 3, "#ff2448");
+    // CHARLI — messy black bob, big shades, white tank
+    // hair mass
+    pset(x - 6, y - 8, 13, 8, "#1a1a1a");
+    pset(x - 8, y - 5, 4, 7, "#0d0d0d");
+    pset(x + 6, y - 5, 4, 6, "#0d0d0d");
+    pset(x - 4, y - 9, 9, 3, "#2a2a2a");
+    // face
+    pset(x - 3, y - 5, 8, 6, "#f0c7a0");
+    // huge black sunglasses
+    pset(x - 4, y - 4, 10, 3, "#111");
+    pset(x - 3, y - 3, 3, 2, "#333");
+    pset(x + 2, y - 3, 3, 2, "#333");
+    // mouth
+    pset(x, y + 1, 3, 1, "#c45a6a");
+    // white tank
+    pset(x - 4, y + 3, 9, 6, "#fff");
+    pset(x - 3, y + 4, 2, 2, "#eee");
+  }
+
+  function update(dt) {
+    if (state !== "play") {
+      game.time += dt;
+      return;
+    }
+    game.time += dt;
+    game.invuln = Math.max(0, game.invuln - dt);
+    game.lane += (game.targetLane - game.lane) * Math.min(1, dt * 14);
+
+    const pace = 1.2 + game.dist * 0.08;
+    game.speed = 280 * pace;
+    game.dist += (game.speed * dt) / 210;
+
+    // mean fuel curve
+    const drain = (11.5 + game.dist * 0.28 + pace * 1.4) * dt;
+    game.fuel -= drain;
+
+    game.spawn -= dt;
+    if (game.spawn <= 0) {
+      spawnItem(1);
+      game.spawn = Math.max(0.48, 0.95 - game.dist * 0.018);
+    }
+
+    for (const it of game.items) {
+      it.z -= (game.speed * dt) / 620;
+      if (!it.hit && it.z < 0.085 && it.z > -0.02 && game.invuln <= 0) {
+        if (Math.abs(it.lane - game.lane) < 0.42) {
+          it.hit = true;
+          if (it.type === "coke") grabCoke();
+          else gameOver(it.type);
+        }
+      }
+    }
+    game.items = game.items.filter(it => it.z > -0.08 && !it.hit);
+
+    for (const L of game.lights) {
+      L.z -= (game.speed * dt) / 700;
+      if (L.z < 0) L.z += 1;
+    }
+
+    if (state === "play" && game.fuel <= 0) {
+      game.fuel = 0;
+      gameOver("fuel");
+    }
+
+    game.beat += dt;
+    const interval = Math.max(0.22, 0.48 - game.dist * 0.006);
+    if (game.beat >= interval) {
+      game.beat = 0;
+      audio.kick();
+      setTimeout(() => audio.hat(), 70);
+    }
+
+    distEl.textContent = game.dist.toFixed(1);
+    fuelbar.style.width = Math.max(0, game.fuel) + "%";
+    fuelbar.classList.toggle("low", game.fuel < 30);
+    if (shake > 0) shake *= 0.75;
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, VW, VH);
+    if (shake > 0.3) {
+      ctx.save();
+      ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
+    drawSky();
+    drawRoad();
+    drawLights();
+    const ordered = game.items.slice().sort((a, b) => b.z - a.z);
+    for (const it of ordered) drawItem(it);
+    if (state === "play" || state === "over") drawCar();
+
+    if (state === "play" && game.fuel < 30) {
+      ctx.fillStyle = `rgba(160,0,20,${0.12 + Math.sin(game.time * 10) * 0.08})`;
+      ctx.fillRect(0, 0, VW, VH);
+    }
+    if (shake > 0.3) ctx.restore();
+
+    vctx.imageSmoothingEnabled = false;
+    vctx.clearRect(0, 0, view.width, view.height);
+    vctx.drawImage(px, 0, 0, view.width, view.height);
+  }
+
+  function loop(ts) {
+    if (!last) last = ts;
+    const dt = Math.min(0.033, (ts - last) / 1000);
+    last = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
