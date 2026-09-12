@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>She Made Sombr Unfollow Me</title>
+<style>
+  :root {
+    --cream: #f3ecd8;
+    --cream-dark: #e5dcc0;
+    --forest: #2f4a34;
+    --forest-deep: #1e3324;
+    --gold: #c9a227;
+    --gold-light: #e8c85f;
+    --ink: #2a2318;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      repeating-linear-gradient(135deg, rgba(201,162,39,0.06) 0 2px, transparent 2px 40px),
+      linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+    font-family: 'Courier New', monospace;
+    color: var(--ink);
+    padding: 16px;
+    width: 100%;
+  }
+  #gameContainer {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    margin: 0 0 2px;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--forest-deep);
+    text-shadow: 2px 2px 0 var(--gold-light);
+  }
+  p.sub {
+    margin: 0 0 14px;
+    opacity: 0.75;
+    font-size: 0.8rem;
+    text-align: center;
+    max-width: 480px;
+    font-family: system-ui, sans-serif;
+  }
+  #hud {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+  }
+  #hud .stat {
+    background: var(--forest);
+    color: var(--cream);
+    padding: 6px 12px;
+    box-shadow: 3px 3px 0 var(--forest-deep), 3px 3px 0 1px var(--gold);
+  }
+  #wrap {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 6px 6px 0 var(--forest-deep);
+    border: 4px solid var(--forest);
+    image-rendering: pixelated;
+    width: 100%;
+    max-width: 400px;
+  }
+  #wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(30,51,36,0.07) 0px,
+      rgba(30,51,36,0.07) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+  canvas {
+    display: block;
+    background: var(--cream);
+    touch-action: none;
+    width: 100%;
+    height: auto;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(30,51,36,0.94);
+    padding: 20px;
+    color: var(--cream);
+  }
+  #overlay h2 { margin: 0 0 6px; font-size: 1.2rem; letter-spacing: 0.5px; }
+  #overlay p { margin: 4px 0 16px; opacity: 0.85; font-size: 0.85rem; max-width: 300px; font-family: system-ui, sans-serif; }
+  button {
+    background: var(--gold);
+    border: 2px solid var(--forest-deep);
+    color: var(--forest-deep);
+    font-weight: 700;
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    box-shadow: 3px 3px 0 var(--forest-deep);
+  }
+  button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--forest-deep); }
+  #controls-hint {
+    margin-top: 10px;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    text-align: center;
+    font-family: system-ui, sans-serif;
+  }
+  .hidden { display: none !important; }
+
+  @media (max-width: 420px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.15rem; }
+    p.sub { font-size: 0.72rem; margin-bottom: 10px; }
+    #hud { gap: 6px; font-size: 0.7rem; flex-wrap: wrap; justify-content: center; }
+    #hud .stat { padding: 5px 8px; box-shadow: 2px 2px 0 var(--forest-deep), 2px 2px 0 1px var(--gold); }
+    #controls-hint { font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+<h1>She Made Sombr Unfollow Me</h1>
+<p class="sub">Taylor's on guard duty up top — slide her left and right to block sombr before he reaches Eli's follow button.</p>
+
+<div id="hud">
+  <div class="stat">BLOCKS: <span id="score">0</span></div>
+  <div class="stat">LIVES: <span id="lives">5</span></div>
+  <div class="stat">BEST: <span id="best">0</span></div>
+  <div class="stat" id="muteBtn" style="cursor:pointer;">🔊</div>
+</div>
+
+<div id="wrap">
+  <canvas id="game" width="400" height="620"></canvas>
+  <div id="overlay">
+    <h2 id="overlayTitle">Ready to Block?</h2>
+    <p id="overlayText">Move Taylor with ← → arrows, A/D, or drag/tap. sombr's tall and only one comes at a time... at first.</p>
+    <button id="startBtn">Start Blocking</button>
+  </div>
+</div>
+<div id="controls-hint">← → / A D / drag to move Taylor and body-block sombr</div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const W = canvas.width, H = canvas.height;
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const bestEl = document.getElementById('best');
+
+  let best = 0;
+  try { best = parseInt(localStorage.getItem('sombrUnfollowBest') || '0', 10); } catch(e) { best = 0; }
+  bestEl.textContent = best;
+
+  const cardZone = { x: 20, y: 14, w: W - 40, h: 62 };
+  const taylorLaneY = cardZone.y + cardZone.h + 30;
+
+  const taylor = {
+    w: 58, h: 92,
+    x: W/2 - 29,
+    y: taylorLaneY,
+    speed: 7,
+    baseSpeed: 7,
+    vx: 0,
+    walkPhase: 0,
+    blink: 0
+  };
+
+  let sombrs = [];
+  let particles = [];
+  let score = 0;
+  let lives = 5;
+  let running = false;
+  let spawnTimer = 0;
+  let spawnInterval = 115;
+  let frame = 0;
+  let maxActive = 1;
+
+  // ---- Copylivia event state ----
+  function randRange(min, max) { return min + Math.random() * (max - min); }
+
+  let bigBanner = null;           // { text, life, maxLife }
+  let oliviaActive = false;
+  let oliviaTimer = 0;
+  let oliviaDuration = 0;
+  let oliviaNextIn = randRange(480, 780);   // first appearance ~8-13s in
+  let oliviaBoost = 1;
+  let oliviaAlpha = 0;
+  let roachesActive = false;
+  let roachDelayTimer = null;
+  let roachTimer = 0;
+  let roaches = [];
+
+  function resetGame() {
+    score = 0;
+    lives = 5;
+    sombrs = [];
+    particles = [];
+    spawnTimer = 0;
+    spawnInterval = 115;
+    frame = 0;
+    maxActive = 1;
+    floatingTexts = [];
+    bigBanner = null;
+    oliviaActive = false;
+    oliviaTimer = 0;
+    oliviaBoost = 1;
+    oliviaAlpha = 0;
+    oliviaNextIn = randRange(480, 780);
+    roachesActive = false;
+    roachDelayTimer = null;
+    roaches = [];
+    taylor.speed = taylor.baseSpeed;
+    taylor.x = W/2 - taylor.w/2;
+    updateHUD();
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = score;
+    livesEl.textContent = lives;
+  }
+
+  function activeSombrCount() {
+    return sombrs.filter(s => !s.blocked).length;
+  }
+
+  function spawnSombr() {
+    // tall + narrow silhouette
+    const w = 40, h = 150;
+    const laneX = 30 + Math.random() * (W - 60 - w);
+    sombrs.push({
+      x: laneX,
+      y: H + 40,
+      w, h,
+      speed: 1.3 + Math.random() * 0.9 + score * 0.015,
+      wobble: Math.random() * Math.PI * 2,
+      walkPhase: Math.random() * Math.PI * 2,
+      blocked: false,
+      blockedTimer: 0
+    });
+  }
+
+  function spawnParticles(x, y, color) {
+    for (let i = 0; i < 12; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6 - 2,
+        life: 26 + Math.random() * 10,
+        color
+      });
+    }
+  }
+
+  // ---- Copylivia event ----
+  function triggerOliviaEvent() {
+    oliviaActive = true;
+    oliviaAlpha = 0;
+    oliviaDuration = Math.round(randRange(600, 900)); // ~10-15s at 60fps
+    oliviaTimer = oliviaDuration;
+    oliviaBoost = 1.6;
+    bigBanner = { text: 'COPYLIVIA ATTACK!', life: 150, maxLife: 150 };
+    sfxOlivia();
+
+    // some visits bring a roach diversion partway through
+    if (Math.random() < 0.55) {
+      roachDelayTimer = Math.round(randRange(70, 130)); // 1-2s after she shows up
+    } else {
+      roachDelayTimer = null;
+    }
+  }
+
+  function spawnRoaches(count) {
+    roaches = [];
+    for (let i = 0; i < count; i++) {
+      roaches.push({
+        x: Math.random() * (W - 30),
+        y: taylor.y - 6 + Math.random() * (taylor.h + 16),
+        vx: (Math.random() < 0.5 ? -1 : 1) * (1.4 + Math.random() * 1.6),
+        phase: Math.random() * Math.PI * 2,
+        w: 28, h: 16
+      });
+    }
+  }
+
+  // ---- floating funny messages ----
+  const BLOCK_MESSAGES = [
+    "BLOCKED. 💅",
+    "not today, sombr",
+    "she said NO",
+    "delete this",
+    "central park incident vol. 2",
+    "he really thought",
+    "security check: FAILED",
+    "swiftly denied",
+    "not on her watch",
+    "he did NOT, in fact, follow",
+    "ma'am please step back",
+    "and THAT'S on blocking",
+    "denied w/ a smile",
+    "try again next era",
+    "she ate that block",
+    "hands off the follow button",
+    "nope. next.",
+    "restraining order energy",
+    "BEER BELLY!!!",
+    "CHOPPED!",
+    "khia",
+    "sombr, you must unfollow eli!!"
+  ];
+  let floatingTexts = [];
+
+  function spawnFunnyText(x, y) {
+    const msg = BLOCK_MESSAGES[Math.floor(Math.random() * BLOCK_MESSAGES.length)];
+    floatingTexts.push({
+      x, y,
+      msg,
+      life: 130,
+      maxLife: 130,
+      vy: -0.35
+    });
+  }
+
+  // ---- retro sound engine (Web Audio API, synthesized — no external files) ----
+  let audioCtx = null;
+  let muted = false;
+  const muteBtn = document.getElementById('muteBtn');
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+  });
+  function ensureAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { audioCtx = null; }
+    } else if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freq, duration, type, vol, delay) {
+    if (!audioCtx || muted) return;
+    delay = delay || 0;
+    const t0 = audioCtx.currentTime + delay;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(vol || 0.15, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxBlock() {
+    // bright two-note "bonk" for a successful block
+    playTone(520, 0.08, 'square', 0.14, 0);
+    playTone(780, 0.1, 'square', 0.12, 0.05);
+  }
+
+  function sfxBreak() {
+    // low descending "womp" when sombr slips through
+    playTone(220, 0.14, 'sawtooth', 0.13, 0);
+    playTone(160, 0.18, 'sawtooth', 0.12, 0.1);
+  }
+
+  function sfxGameOver() {
+    playTone(300, 0.12, 'triangle', 0.14, 0);
+    playTone(240, 0.12, 'triangle', 0.14, 0.13);
+    playTone(180, 0.22, 'triangle', 0.14, 0.26);
+  }
+
+  function sfxSpawn() {
+    playTone(140, 0.05, 'square', 0.05, 0);
+  }
+
+  function sfxOlivia() {
+    // ominous little sting to announce her arrival
+    playTone(392, 0.09, 'sawtooth', 0.12, 0);
+    playTone(330, 0.09, 'sawtooth', 0.12, 0.09);
+    playTone(261, 0.16, 'sawtooth', 0.14, 0.18);
+  }
+
+  function sfxRoach() {
+    playTone(180, 0.04, 'square', 0.06, 0);
+    playTone(160, 0.04, 'square', 0.05, 0.05);
+  }
+
+  const keys = {};
+  window.addEventListener('keydown', e => {
+    if (['ArrowLeft','ArrowRight','a','d','A','D'].includes(e.key)) {
+      keys[e.key.toLowerCase()] = true;
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  let dragging = false;
+  function pointerToX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    return (clientX - rect.left) * (W / rect.width);
+  }
+  canvas.addEventListener('pointerdown', e => {
+    dragging = true;
+    taylor.x = pointerToX(e.clientX) - taylor.w/2;
+  });
+  window.addEventListener('pointermove', e => {
+    if (dragging) taylor.x = pointerToX(e.clientX) - taylor.w/2;
+  });
+  window.addEventListener('pointerup', () => dragging = false);
+
+  // ---- blocky pixel-style drawing helper ----
+  // draws a rect using fractions of the character's own w/h, snapped for a chunky pixel look
+  function blk(w, h, fx, fy, fw, fh, color) {
+    const gx = Math.round(fx * 16) / 16;
+    const gy = Math.round(fy * 16) / 16;
+    const gw = Math.round(fw * 16) / 16;
+    const gh = Math.round(fh * 16) / 16;
+    ctx.fillStyle = color;
+    ctx.fillRect(gx * w, gy * h, gw * w, gh * h);
+  }
+
+  function drawTaylor(t) {
+    const { x, y, w, h } = t;
+    const moving = Math.abs(t.vx) > 0.5;
+    const legShift = moving ? Math.sin(t.walkPhase) * 0.03 : 0;
+    const hairSway = Math.sin(frame * 0.04) * 0.012;
+    const bob = moving ? Math.abs(Math.sin(t.walkPhase)) * 3 : Math.sin(frame * 0.05) * 1.2;
+
+    ctx.save();
+    ctx.translate(x, y - bob);
+
+    ctx.fillStyle = 'rgba(30,51,36,0.22)';
+    ctx.fillRect(w*0.18, h + 6, w*0.64, 6);
+
+    const skin = '#f3d2b3';
+    const hair = '#e6c04a';
+    const hairHi = '#f3dc7a';
+    const hairLo = '#c9a030';
+    const dress = '#3a6a42';
+    const dressDk = '#2c5233';
+    const gold = '#c9a227';
+    const boot = '#4a331c';
+    const blue = '#3a86d4';
+    const white = '#ffffff';
+    const black = '#241d12';
+    const lip = '#c43b3b';
+
+    // long wavy blonde hair behind body
+    blk(w,h, 0.00+hairSway, 0.04, 0.22, 0.58, hair);
+    blk(w,h, 0.78+hairSway, 0.04, 0.22, 0.58, hair);
+    blk(w,h, -0.04+hairSway, 0.22, 0.16, 0.22, hairHi);
+    blk(w,h, 0.88+hairSway, 0.22, 0.16, 0.22, hairHi);
+    blk(w,h, 0.06+hairSway, 0.50, 0.16, 0.18, hairLo);
+    blk(w,h, 0.78+hairSway, 0.50, 0.16, 0.18, hairLo);
+    blk(w,h, 0.02+hairSway, 0.62, 0.14, 0.10, hair);
+    blk(w,h, 0.84+hairSway, 0.62, 0.14, 0.10, hair);
+
+    // legs + boots
+    blk(w,h, 0.30+legShift, 0.76, 0.14, 0.18, skin);
+    blk(w,h, 0.56-legShift, 0.76, 0.14, 0.18, skin);
+    blk(w,h, 0.28+legShift, 0.92, 0.16, 0.08, boot);
+    blk(w,h, 0.56-legShift, 0.92, 0.16, 0.08, boot);
+
+    // folklore-green dress with gold trim + belt
+    blk(w,h, 0.32, 0.40, 0.36, 0.08, dress);
+    blk(w,h, 0.26, 0.48, 0.48, 0.08, dress);
+    blk(w,h, 0.20, 0.56, 0.60, 0.10, dress);
+    blk(w,h, 0.15, 0.66, 0.70, 0.09, dressDk);
+    blk(w,h, 0.28, 0.52, 0.44, 0.03, gold);
+    blk(w,h, 0.15, 0.74, 0.70, 0.03, gold);
+
+    // arms out in a block stance + friendship-bracelet stacks
+    const armSwing = moving ? Math.sin(t.walkPhase) * 0.02 : 0;
+    blk(w,h, -0.12, 0.40+armSwing, 0.18, 0.09, skin);
+    blk(w,h, 0.94, 0.40-armSwing, 0.18, 0.09, skin);
+    blk(w,h, -0.10, 0.46+armSwing, 0.14, 0.025, '#7ec8e3');
+    blk(w,h, -0.08, 0.48+armSwing, 0.12, 0.02, '#f5a9b8');
+    blk(w,h, 0.96, 0.46-armSwing, 0.14, 0.025, '#c9a227');
+    blk(w,h, 0.96, 0.48-armSwing, 0.12, 0.02, '#7a1e8c');
+
+    // neck + oval-ish head
+    blk(w,h, 0.42, 0.31, 0.16, 0.07, skin);
+    blk(w,h, 0.24, 0.08, 0.52, 0.30, skin);
+    blk(w,h, 0.42, 0.36, 0.08, 0.03, gold);
+
+    // bangs / curtain fringe
+    blk(w,h, 0.18, 0.00, 0.64, 0.10, hair);
+    blk(w,h, 0.16, 0.08, 0.14, 0.10, hairHi);
+    blk(w,h, 0.70, 0.08, 0.14, 0.10, hairHi);
+    blk(w,h, 0.30, 0.02, 0.40, 0.06, hairLo);
+
+    // blue eyes + lash
+    if (t.blink > 0) {
+      blk(w,h, 0.30, 0.22, 0.12, 0.02, black);
+      blk(w,h, 0.58, 0.22, 0.12, 0.02, black);
+    } else {
+      blk(w,h, 0.29, 0.18, 0.13, 0.09, white);
+      blk(w,h, 0.57, 0.18, 0.13, 0.09, white);
+      blk(w,h, 0.31, 0.20, 0.09, 0.06, blue);
+      blk(w,h, 0.59, 0.20, 0.09, 0.06, blue);
+      blk(w,h, 0.33, 0.21, 0.04, 0.04, black);
+      blk(w,h, 0.61, 0.21, 0.04, 0.04, black);
+      blk(w,h, 0.29, 0.17, 0.13, 0.02, black);
+      blk(w,h, 0.57, 0.17, 0.13, 0.02, black);
+    }
+
+    // blush + red lip
+    blk(w,h, 0.26, 0.27, 0.08, 0.03, '#f0b0a4');
+    blk(w,h, 0.66, 0.27, 0.08, 0.03, '#f0b0a4');
+    blk(w,h, 0.42, 0.30, 0.16, 0.03, lip);
+
+    ctx.restore();
+  }
+
+  function drawSombr(s) {
+    const { x, y, w, h } = s;
+    const legShift = Math.sin(s.walkPhase) * 0.03;
+    const stumble = s.blocked ? Math.sin(s.blockedTimer * 0.6) * 0.05 : 0;
+    const curl = Math.sin(s.walkPhase * 0.5) * 0.012;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    ctx.fillStyle = 'rgba(30,51,36,0.18)';
+    ctx.fillRect(w*0.2, h + 4, w*0.6, 5);
+
+    const skin = '#d4b08a';
+    const hair = '#1a1214';
+    const hairHi = '#3a2a2e';
+    const jacket = s.blocked ? '#6e6e74' : '#1a1a1e';
+    const jacketHi = s.blocked ? '#8a8a90' : '#2c2c32';
+    const shirt = s.blocked ? '#c8c4ba' : '#efe8dc';
+    const pants = '#16161c';
+    const shoe = '#0d0d10';
+    const black = '#1a1a1f';
+    const brown = '#5a3418';
+
+    // long skinny legs
+    blk(w,h, 0.28+legShift+stumble, 0.62, 0.16, 0.30, pants);
+    blk(w,h, 0.56-legShift+stumble, 0.62, 0.16, 0.30, pants);
+    blk(w,h, 0.26+legShift+stumble, 0.92, 0.18, 0.06, shoe);
+    blk(w,h, 0.56-legShift+stumble, 0.92, 0.18, 0.06, shoe);
+
+    // leather jacket over open white shirt
+    blk(w,h, 0.36+stumble, 0.30, 0.28, 0.08, jacket);
+    blk(w,h, 0.30+stumble, 0.38, 0.40, 0.08, jacket);
+    blk(w,h, 0.24+stumble, 0.46, 0.52, 0.16, jacket);
+    blk(w,h, 0.24+stumble, 0.60, 0.52, 0.04, jacketHi);
+    blk(w,h, 0.40+stumble, 0.36, 0.20, 0.22, shirt);
+    blk(w,h, 0.46+stumble, 0.34, 0.04, 0.10, '#c8b8a0'); // necklace glint
+
+    // arms
+    if (s.blocked) {
+      blk(w,h, 0.04+stumble, 0.30, 0.20, 0.09, jacketHi);
+      blk(w,h, 0.76-stumble, 0.30, 0.20, 0.09, jacketHi);
+    } else {
+      blk(w,h, 0.62, 0.22, 0.12, 0.10, jacket);
+      blk(w,h, 0.68, 0.12, 0.10, 0.10, jacket);
+      blk(w,h, 0.72, 0.02, 0.09, 0.10, skin);
+    }
+
+    // mop of dark curls (no beanie) — signature silhouette
+    blk(w,h, 0.18+curl, -0.02, 0.22, 0.16, hair);
+    blk(w,h, 0.60-curl, -0.02, 0.22, 0.16, hair);
+    blk(w,h, 0.28, -0.06, 0.44, 0.12, hair);
+    blk(w,h, 0.12+curl, 0.08, 0.18, 0.18, hairHi);
+    blk(w,h, 0.70-curl, 0.08, 0.18, 0.18, hairHi);
+    blk(w,h, 0.22, 0.18, 0.14, 0.14, hair);
+    blk(w,h, 0.64, 0.18, 0.14, 0.14, hair);
+
+    // narrow face
+    blk(w,h, 0.34, 0.12, 0.32, 0.20, skin);
+
+    // curtain bangs over forehead
+    blk(w,h, 0.30, 0.08, 0.16, 0.08, hair);
+    blk(w,h, 0.54, 0.08, 0.16, 0.08, hair);
+    blk(w,h, 0.38, 0.06, 0.24, 0.05, hairHi);
+
+    // face
+    if (s.blocked) {
+      blk(w,h, 0.38, 0.18, 0.05, 0.02, black);
+      blk(w,h, 0.44, 0.20, 0.05, 0.02, black);
+      blk(w,h, 0.51, 0.20, 0.05, 0.02, black);
+      blk(w,h, 0.57, 0.18, 0.05, 0.02, black);
+    } else {
+      blk(w,h, 0.39, 0.18, 0.06, 0.04, brown);
+      blk(w,h, 0.55, 0.18, 0.06, 0.04, brown);
+      blk(w,h, 0.40, 0.19, 0.03, 0.03, black);
+      blk(w,h, 0.56, 0.19, 0.03, 0.03, black);
+    }
+    blk(w,h, 0.46, 0.26, 0.08, 0.02, '#b07068');
+
+    ctx.restore();
+  }
+
+  function drawOlivia(cx, cy, scale, alpha) {
+    // stylized rival popstar — dark waves, space buns, heart sunglasses, purple GUTS jacket
+    const w = 62 * scale, h = 96 * scale;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx - w/2, cy - h/2);
+
+    ctx.fillStyle = 'rgba(30,12,40,0.25)';
+    ctx.fillRect(w*0.15, h + 4, w*0.7, 6);
+
+    const jacket = '#6b1a86';
+    const jacketHi = '#9a3cb0';
+    const skin = '#e0b090';
+    const hair = '#2a1410';
+    const hairHi = '#4a2418';
+    const glasses = '#140a12';
+    const glassesL = '#ff78c8';
+    const boot = '#19100e';
+    const mic = '#28282e';
+    const micHead = '#c8c8d2';
+    const notebook = '#f0ebdc';
+    const copy = '#7a1e8c';
+    const star = '#ffd25a';
+    const lip = '#b01e2e';
+
+    // space buns + long dark waves
+    blk(w,h, 0.02, -0.02, 0.18, 0.14, hair);
+    blk(w,h, 0.80, -0.02, 0.18, 0.14, hair);
+    blk(w,h, 0.05, 0.00, 0.12, 0.08, hairHi);
+    blk(w,h, 0.83, 0.00, 0.12, 0.08, hairHi);
+    blk(w,h, 0.14, 0.08, 0.72, 0.16, hair);
+    blk(w,h, 0.06, 0.18, 0.20, 0.38, hair);
+    blk(w,h, 0.74, 0.18, 0.20, 0.38, hair);
+    blk(w,h, 0.04, 0.48, 0.16, 0.14, hairHi);
+    blk(w,h, 0.80, 0.48, 0.16, 0.14, hairHi);
+
+    // head
+    blk(w,h, 0.24, 0.16, 0.52, 0.30, skin);
+
+    // curtain bangs
+    blk(w,h, 0.22, 0.12, 0.18, 0.10, hair);
+    blk(w,h, 0.60, 0.12, 0.18, 0.10, hair);
+
+    // heart sunglasses
+    blk(w,h, 0.24, 0.28, 0.20, 0.11, glasses);
+    blk(w,h, 0.54, 0.28, 0.20, 0.11, glasses);
+    blk(w,h, 0.42, 0.31, 0.14, 0.03, glasses);
+    blk(w,h, 0.28, 0.26, 0.08, 0.05, glasses); // heart bump
+    blk(w,h, 0.34, 0.26, 0.08, 0.05, glasses);
+    blk(w,h, 0.58, 0.26, 0.08, 0.05, glasses);
+    blk(w,h, 0.64, 0.26, 0.08, 0.05, glasses);
+    blk(w,h, 0.27, 0.30, 0.13, 0.05, glassesL);
+    blk(w,h, 0.57, 0.30, 0.13, 0.05, glassesL);
+
+    // smirk
+    blk(w,h, 0.40, 0.42, 0.16, 0.03, lip);
+    blk(w,h, 0.28, 0.38, 0.08, 0.03, '#e8a090');
+    blk(w,h, 0.64, 0.38, 0.08, 0.03, '#e8a090');
+
+    // neck
+    blk(w,h, 0.40, 0.46, 0.16, 0.06, skin);
+    blk(w,h, 0.42, 0.50, 0.08, 0.03, '#c0c4cc'); // silver necklace
+
+    // purple jacket + star belt
+    blk(w,h, 0.16, 0.52, 0.66, 0.32, jacket);
+    blk(w,h, 0.16, 0.52, 0.08, 0.32, jacketHi);
+    blk(w,h, 0.74, 0.52, 0.08, 0.32, jacketHi);
+    blk(w,h, 0.36, 0.56, 0.26, 0.26, skin);
+    blk(w,h, 0.32, 0.76, 0.34, 0.04, star);
+
+    // mic arm
+    blk(w,h, 0.02, 0.44, 0.12, 0.20, jacket);
+    blk(w,h, 0.00, 0.30, 0.09, 0.14, skin);
+    blk(w,h, -0.02, 0.14, 0.09, 0.18, mic);
+    blk(w,h, -0.04, 0.08, 0.14, 0.09, micHead);
+
+    // notebook arm
+    blk(w,h, 0.84, 0.50, 0.12, 0.20, jacket);
+    blk(w,h, 0.88, 0.64, 0.10, 0.10, skin);
+    blk(w,h, 0.90, 0.58, 0.22, 0.24, notebook);
+    ctx.strokeStyle = copy;
+    ctx.lineWidth = Math.max(1.5, 2 * scale);
+    ctx.strokeRect((0.94)*w, (0.65)*h, 0.07*w, 0.07*h);
+    ctx.strokeRect((0.965)*w, (0.675)*h, 0.07*w, 0.07*h);
+
+    // legs + boots
+    blk(w,h, 0.30, 0.84, 0.14, 0.14, '#3a1a44');
+    blk(w,h, 0.56, 0.84, 0.14, 0.14, '#3a1a44');
+    blk(w,h, 0.28, 0.96, 0.18, 0.06, boot);
+    blk(w,h, 0.54, 0.96, 0.18, 0.06, boot);
+
+    ctx.restore();
+  }
+
+  function drawRoach(r) {
+    ctx.save();
+    ctx.translate(r.x + r.w/2, r.y + r.h/2);
+    const facing = r.vx < 0 ? -1 : 1;
+    ctx.scale(facing, 1);
+    const tw = Math.sin(r.phase) * 0.18;
+    const bob = Math.sin(r.phase * 1.4) * 1.2;
+
+    ctx.translate(-r.w/2, -r.h/2 + bob);
+
+    const shell = '#5a3018';
+    const shellHi = '#7a4a22';
+    const shellDk = '#2a160c';
+    const belly = '#3a2214';
+    const leg = '#1a0e08';
+    const purple = '#7a1e8c';
+    const pink = '#ff78c8';
+
+    // six jittering legs
+    ctx.strokeStyle = leg;
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    const legs = [
+      [0.28, 0.42, -7, 5 + tw*6],
+      [0.50, 0.46, -8, 7 - tw*6],
+      [0.70, 0.44, -6, 6 + tw*4],
+      [0.28, 0.38, -6, -5 - tw*5],
+      [0.50, 0.36, -7, -6 + tw*5],
+      [0.70, 0.38, -5, -5 - tw*4]
+    ];
+    for (const [fx, fy, dx, dy] of legs) {
+      ctx.beginPath();
+      ctx.moveTo(r.w*fx, r.h*fy);
+      ctx.lineTo(r.w*fx + dx, r.h*fy + dy);
+      ctx.stroke();
+    }
+
+    // segmented abdomen
+    ctx.fillStyle = shell;
+    ctx.fillRect(r.w*0.08, r.h*0.22, r.w*0.42, r.h*0.50);
+    ctx.fillStyle = shellDk;
+    ctx.fillRect(r.w*0.12, r.h*0.34, r.w*0.36, r.h*0.06);
+    ctx.fillRect(r.w*0.12, r.h*0.48, r.w*0.36, r.h*0.05);
+    ctx.fillStyle = shellHi;
+    ctx.fillRect(r.w*0.14, r.h*0.26, r.w*0.30, r.h*0.08);
+
+    // thorax
+    ctx.fillStyle = belly;
+    ctx.fillRect(r.w*0.44, r.h*0.18, r.w*0.30, r.h*0.52);
+    ctx.fillStyle = shellHi;
+    ctx.fillRect(r.w*0.48, r.h*0.22, r.w*0.22, r.h*0.16);
+
+    // head
+    ctx.fillStyle = shellDk;
+    ctx.fillRect(r.w*0.70, r.h*0.24, r.w*0.24, r.h*0.38);
+    ctx.fillStyle = '#1a0c08';
+    ctx.fillRect(r.w*0.86, r.h*0.32, r.w*0.10, r.h*0.10);
+    ctx.fillRect(r.w*0.86, r.h*0.46, r.w*0.10, r.h*0.10);
+
+    // tiny heart sunglasses (livie drip)
+    ctx.fillStyle = '#140a12';
+    ctx.fillRect(r.w*0.74, r.h*0.30, r.w*0.12, r.h*0.14);
+    ctx.fillRect(r.w*0.86, r.h*0.30, r.w*0.12, r.h*0.14);
+    ctx.fillStyle = pink;
+    ctx.fillRect(r.w*0.76, r.h*0.33, r.w*0.08, r.h*0.07);
+    ctx.fillRect(r.w*0.88, r.h*0.33, r.w*0.08, r.h*0.07);
+
+    // purple streak on the shell
+    ctx.fillStyle = purple;
+    ctx.fillRect(r.w*0.16, r.h*0.28, r.w*0.08, r.h*0.36);
+
+    // antennae with pink tips
+    ctx.strokeStyle = shellDk;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(r.w*0.92, r.h*0.24);
+    ctx.quadraticCurveTo(r.w*1.05, r.h*0.00, r.w*1.12, -r.h*0.28 + tw*4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(r.w*0.88, r.h*0.22);
+    ctx.quadraticCurveTo(r.w*0.96, r.h*-0.06, r.w*1.02, -r.h*0.36 - tw*4);
+    ctx.stroke();
+    ctx.fillStyle = pink;
+    ctx.fillRect(r.w*1.10, -r.h*0.32 + tw*4, 3, 3);
+    ctx.fillRect(r.w*1.00, -r.h*0.40 - tw*4, 3, 3);
+
+    ctx.restore();
+  }
+
+  function drawBigBanner(b) {
+    const frac = b.life / b.maxLife;
+    const alpha = frac > 0.25 ? 1 : Math.max(frac / 0.25, 0);
+    const rise = frac > 0.85 ? (1 - (b.life - b.maxLife*0.85) / (b.maxLife*0.15)) : 1;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const cy = H * 0.38;
+    ctx.font = 'bold 26px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    const metrics = ctx.measureText(b.text);
+    const pad = 14;
+    const boxW = metrics.width + pad*2;
+    const boxH = 40;
+    ctx.fillStyle = 'rgba(30,12,40,0.85)';
+    ctx.fillRect(W/2 - boxW/2, cy - boxH/2, boxW, boxH);
+    ctx.strokeStyle = '#ffd25a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(W/2 - boxW/2, cy - boxH/2, boxW, boxH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(b.text, W/2, cy + 9);
+    ctx.restore();
+  }
+
+  function drawEliIcon(cx, cy, r) {
+    // stage-girl avatar: auburn waves, freckles, blue eyes, pink clips
+    ctx.save();
+    ctx.translate(cx - r, cy - r);
+    const size = r * 2;
+    const skin = '#f0c9b0';
+    const hair = '#a85a2a';
+    const hairHi = '#c9783c';
+    const pink = '#f5a9c4';
+    const lav = '#e8d4f0';
+    const white = '#ffffff';
+    const black = '#3a2f3a';
+    const blue = '#4a7ec8';
+    const stripeBlue = '#5bcefa';
+    const stripePink = '#f5a9b8';
+
+    ctx.fillStyle = lav;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#2a2318';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const b = (fx,fy,fw,fh,c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(Math.round(fx*size), Math.round(fy*size), Math.round(fw*size), Math.round(fh*size));
+    };
+    // face
+    b(0.28,0.28,0.44,0.44, skin);
+    // long wavy auburn hair
+    b(0.10,0.18,0.20,0.46, hair);
+    b(0.70,0.18,0.20,0.46, hair);
+    b(0.22,0.12,0.56,0.18, hair);
+    b(0.12,0.30,0.12,0.16, hairHi);
+    b(0.76,0.30,0.12,0.16, hairHi);
+    b(0.08,0.50,0.14,0.16, hair);
+    b(0.78,0.50,0.14,0.16, hair);
+    // curtain bangs
+    b(0.26,0.18,0.16,0.12, hairHi);
+    b(0.58,0.18,0.16,0.12, hairHi);
+    // pink clips
+    b(0.20,0.16,0.08,0.05, pink);
+    b(0.72,0.16,0.08,0.05, pink);
+    // blue eyes
+    b(0.34,0.40,0.10,0.08, white);
+    b(0.56,0.40,0.10,0.08, white);
+    b(0.36,0.42,0.07,0.06, blue);
+    b(0.58,0.42,0.07,0.06, blue);
+    b(0.38,0.43,0.04,0.04, black);
+    b(0.60,0.43,0.04,0.04, black);
+    // freckles + blush
+    b(0.32,0.50,0.03,0.03, '#c88860');
+    b(0.38,0.52,0.03,0.03, '#c88860');
+    b(0.60,0.50,0.03,0.03, '#c88860');
+    b(0.66,0.52,0.03,0.03, '#c88860');
+    b(0.30,0.54,0.08,0.05, '#f2b6b0');
+    b(0.62,0.54,0.08,0.05, '#f2b6b0');
+    // lip
+    b(0.44,0.58,0.12,0.04, '#c45a5a');
+    // tiny bow with trans-flag-inspired stripes
+    b(0.42,0.08,0.16,0.06, white);
+    b(0.44,0.06,0.05,0.04, stripeBlue);
+    b(0.51,0.06,0.05,0.04, stripePink);
+
+    ctx.restore();
+  }
+
+  function drawFollowCard(pulse) {
+    const { x, y, w, h } = cardZone;
+    ctx.save();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#d8cfa9';
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+
+    drawEliIcon(x + 30, y + h/2, 20);
+
+    ctx.fillStyle = '#2a2318';
+    ctx.font = 'bold 13px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('Eli', x + 58, y + h/2 - 3);
+    ctx.fillStyle = '#7a7360';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.fillText('@journalofadoll', x + 58, y + h/2 + 13);
+
+    const btnW = 74, btnH = 30;
+    const btnX = x + w - btnW - 14, btnY = y + h/2 - btnH/2;
+    const glow = 0.5 + 0.5 * Math.sin(pulse / 14);
+    ctx.fillStyle = `rgba(201,162,39,${0.85 + glow*0.15})`;
+    ctx.strokeStyle = '#2a2318';
+    ctx.lineWidth = 2;
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+    ctx.fillStyle = '#2a2318';
+    ctx.font = 'bold 12px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Follow', btnX + btnW/2, btnY + btnH/2 + 4);
+
+    ctx.restore();
+    return { x: btnX, y: btnY, w: btnW, h: btnH };
+  }
+
+  function rectsOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x &&
+           a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  let followBtnBox = { x: 0, y: 0, w: 0, h: 0 };
+
+  function update() {
+    frame++;
+
+    // ---- Copylivia scheduling ----
+    if (!oliviaActive) {
+      oliviaNextIn--;
+      if (oliviaNextIn <= 0) triggerOliviaEvent();
+    } else {
+      oliviaTimer--;
+      oliviaAlpha = Math.min(1, oliviaAlpha + 0.05);
+      if (oliviaTimer < 60) oliviaAlpha = Math.max(0, oliviaTimer / 60);
+
+      if (roachDelayTimer !== null) {
+        roachDelayTimer--;
+        if (roachDelayTimer <= 0) {
+          roachDelayTimer = null;
+          roachesActive = true;
+          roachTimer = Math.round(randRange(300, 420)); // ~5-7s
+          spawnRoaches(5 + Math.floor(Math.random()*2));
+          bigBanner = { text: 'LIVIES APPEAR!', life: 130, maxLife: 130 };
+          sfxRoach();
+        }
+      }
+
+      if (roachesActive) {
+        roachTimer--;
+        if (roachTimer <= 0) {
+          roachesActive = false;
+          roaches = [];
+        }
+      }
+
+      if (oliviaTimer <= 0) {
+        oliviaActive = false;
+        oliviaBoost = 1;
+        roachesActive = false;
+        roaches = [];
+        roachDelayTimer = null;
+        oliviaNextIn = Math.round(randRange(900, 1500)); // ~15-25s until next visit
+      }
+    }
+
+    // roach movement + Taylor collision (momentary slow-down diversion)
+    let touchingRoach = false;
+    if (roachesActive) {
+      for (const r of roaches) {
+        r.phase += 0.3;
+        r.x += r.vx;
+        if (r.x <= 0 || r.x >= W - r.w) r.vx *= -1;
+        r.x = Math.max(0, Math.min(W - r.w, r.x));
+        const roachBox = { x: r.x, y: r.y, w: r.w, h: r.h };
+        const taylorBox = { x: taylor.x, y: taylor.y, w: taylor.w, h: taylor.h };
+        if (rectsOverlap(roachBox, taylorBox)) touchingRoach = true;
+      }
+    }
+    taylor.speed = touchingRoach ? taylor.baseSpeed * 0.4 : taylor.baseSpeed;
+
+    if (keys['arrowleft'] || keys['a']) taylor.vx = -taylor.speed;
+    else if (keys['arrowright'] || keys['d']) taylor.vx = taylor.speed;
+    else taylor.vx *= 0.7;
+    taylor.x += taylor.vx;
+    taylor.x = Math.max(0, Math.min(W - taylor.w, taylor.x));
+    if (Math.abs(taylor.vx) > 0.5) taylor.walkPhase += 0.35;
+    if (frame % 140 === 0) taylor.blink = 6;
+    if (taylor.blink > 0) taylor.blink--;
+
+    maxActive = Math.min(3, 1 + Math.floor(score / 10)) + (oliviaActive ? 1 : 0);
+
+    spawnTimer++;
+    if (spawnTimer > spawnInterval && activeSombrCount() < maxActive) {
+      spawnTimer = 0;
+      spawnSombr();
+      sfxSpawn();
+      if (spawnInterval > 65) spawnInterval -= 0.6;
+    }
+
+    for (let i = sombrs.length - 1; i >= 0; i--) {
+      const s = sombrs[i];
+      s.walkPhase += 0.3;
+
+      if (s.blocked) {
+        s.blockedTimer++;
+        s.y += 4.5;
+        s.x += Math.sin(s.blockedTimer * 0.5) * 3;
+        if (s.y > H + 80) sombrs.splice(i, 1);
+        continue;
+      }
+
+      s.wobble += 0.08;
+      s.x += Math.sin(s.wobble) * 0.5;
+      s.y -= s.speed * oliviaBoost;
+
+      const taylorBox = { x: taylor.x, y: taylor.y, w: taylor.w, h: taylor.h };
+      const sombrBox = { x: s.x, y: s.y + s.h*0.55, w: s.w, h: s.h*0.45 }; // torso/head hitbox
+
+      if (rectsOverlap(taylorBox, sombrBox)) {
+        s.blocked = true;
+        score++;
+        updateHUD();
+        spawnParticles(s.x + s.w/2, s.y + s.h*0.3, '#c9a227');
+        spawnFunnyText(s.x + s.w/2, s.y + s.h*0.2);
+        sfxBlock();
+        continue;
+      }
+
+      if (s.y <= followBtnBox.y + followBtnBox.h + 8) {
+        sombrs.splice(i, 1);
+        lives--;
+        updateHUD();
+        const burstX = Math.max(followBtnBox.x, Math.min(s.x + s.w/2, followBtnBox.x + followBtnBox.w));
+        spawnParticles(burstX, followBtnBox.y + 15, '#dcc9ef');
+        sfxBreak();
+        if (lives <= 0) {
+          endGame();
+          return;
+        }
+        continue;
+      }
+
+      if (s.y < -160) sombrs.splice(i, 1);
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life--;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const f = floatingTexts[i];
+      f.y += f.vy;
+      f.life--;
+      if (f.life <= 0) floatingTexts.splice(i, 1);
+    }
+
+    if (bigBanner) {
+      bigBanner.life--;
+      if (bigBanner.life <= 0) bigBanner = null;
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.fillStyle = '#f6f0dd';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(201,162,39,0.08)';
+    for (let gx = 0; gx < W; gx += 26) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (let gy = cardZone.y + cardZone.h; gy < H; gy += 26) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    followBtnBox = drawFollowCard(frame);
+
+    sombrs.forEach(drawSombr);
+    if (roachesActive) roaches.forEach(drawRoach);
+    drawTaylor(taylor);
+
+    if (oliviaActive) {
+      const bobY = Math.sin(frame * 0.05) * 5;
+      const ox = W - 58, oy = cardZone.y + cardZone.h + 60 + bobY;
+      drawOlivia(ox, oy, 0.62, oliviaAlpha);
+    }
+
+    particles.forEach(p => {
+      ctx.globalAlpha = Math.max(p.life / 36, 0);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 4, 4);
+      ctx.globalAlpha = 1;
+    });
+
+    floatingTexts.forEach(f => {
+      const frac = f.life / f.maxLife;
+      const alpha = frac > 0.3 ? 1 : Math.max(frac / 0.3, 0);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#f6f0dd';
+      ctx.strokeText(f.msg, f.x, f.y);
+      ctx.fillStyle = '#1e3324';
+      ctx.fillText(f.msg, f.x, f.y);
+      ctx.restore();
+    });
+
+    if (bigBanner) drawBigBanner(bigBanner);
+  }
+
+  let loopHandle;
+  function loop() {
+    if (!running) return;
+    update();
+    render();
+    loopHandle = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    running = false;
+    cancelAnimationFrame(loopHandle);
+    sfxGameOver();
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem('sombrUnfollowBest', String(best)); } catch(e) {}
+      bestEl.textContent = best;
+    }
+    overlayTitle.textContent = 'sombr slipped past! 😩';
+    overlayText.textContent = `Taylor blocked ${score} time${score === 1 ? '' : 's'} before he snuck a follow on Eli. Run it back?`;
+    startBtn.textContent = 'Block Again';
+    overlay.classList.remove('hidden');
+  }
+
+  startBtn.addEventListener('click', () => {
+    ensureAudio();
+    overlay.classList.add('hidden');
+    resetGame();
+    running = true;
+    loop();
+  });
+
+})();
+</script>
+</body>
+</html>
