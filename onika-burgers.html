@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>ONIKA BURGERS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;600&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: #e8d5c4;
+      color: #3a2418;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100dvh;
+      padding: 8px 0 14px;
+      background:
+        radial-gradient(ellipse at 50% 0%, #f7cfe0 0%, transparent 42%),
+        linear-gradient(180deg, #f3e4d4 0%, #e0c4ae 100%);
+    }
+    .wrap {
+      width: min(430px, 96vw);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 2px 2px 0;
+    }
+    h1 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-style: italic;
+      font-size: clamp(22px, 7vw, 30px);
+      line-height: 1.05;
+      color: #2b1a12;
+      letter-spacing: -0.5px;
+    }
+    h1 span {
+      font-family: "Archivo Black", sans-serif;
+      font-style: normal;
+      color: #e83a8a;
+      font-size: 0.72em;
+      letter-spacing: 0.04em;
+    }
+    .sub { font-size: 11px; opacity: 0.75; margin-top: 4px; }
+    .hud {
+      text-align: right;
+      font-family: "Archivo Black", sans-serif;
+      font-size: 11px;
+      line-height: 1.55;
+      color: #6a3a22;
+    }
+    .hud span { color: #e83a8a; }
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      border: 3px solid #2b1a12;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(80, 40, 20, .22);
+      background: #f7cfe0;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: pointer;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .banner {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #f3e4d4;
+      color: #2b1a12;
+      font-family: "Archivo Black", sans-serif;
+      font-size: clamp(10px, 3.2vw, 13px);
+      line-height: 1.35;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 2px solid #e83a8a;
+      opacity: 0;
+      pointer-events: none;
+      white-space: normal;
+      text-align: center;
+      width: max-content;
+      max-width: min(92%, 28ch);
+      transition: opacity .2s, transform .2s;
+      z-index: 5;
+    }
+    .banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .controls button {
+      font-family: "Archivo Black", sans-serif;
+      font-size: 14px;
+      border: 3px solid #2b1a12;
+      background: #f3e4d4;
+      color: #2b1a12;
+      border-radius: 14px;
+      padding: 16px 10px;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .controls button:active { background: #e83a8a; color: #fff; }
+    .help {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      opacity: 0.7;
+      flex-wrap: wrap;
+    }
+    kbd {
+      font-family: "Archivo Black", sans-serif;
+      font-size: 10px;
+      background: #f3e4d4;
+      border: 1px solid #2b1a12;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>ONIKA <span>BURGERS</span></h1>
+        <div class="sub">Catch the burgers. Do not catch homework. Favorite color is not 5.</div>
+      </div>
+      <div class="hud">
+        <div>SCORE <span id="score">00000</span></div>
+        <div>BEST <span id="best">00000</span></div>
+        <div>MISS <span id="lives">3</span></div>
+      </div>
+    </header>
+    <div class="stage">
+      <div class="banner" id="banner"></div>
+      <canvas id="game" width="420" height="748"></canvas>
+    </div>
+    <div class="controls">
+      <button type="button" id="btnLeft">◀ LEFT</button>
+      <button type="button" id="btnRight">RIGHT ▶</button>
+    </div>
+    <div class="help">
+      <div><kbd>←</kbd> <kbd>→</kbd> / drag / buttons</div>
+      <div>Homework = instant fired.</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const livesEl = document.getElementById("lives");
+  const bannerEl = document.getElementById("banner");
+  const W = canvas.width, H = canvas.height;
+
+  const BEST_KEY = "onika_burgers_best";
+  let best = 0;
+  try { best = Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) {}
+  bestEl.textContent = pad(best);
+
+  const state = {
+    mode: "menu",
+    elapsed: 0,
+    score: 0,
+    lives: 3,
+    nickiX: W / 2,
+    nickiTarget: W / 2,
+    frozen: 0,
+    slow: 0,
+    hiss: 0,
+    flash: 0,
+    spawnAcc: 0,
+    eventAcc: 0,
+    items: [],
+    particles: [],
+    keys: { l: false, r: false },
+    bannerT: 0,
+    belt: 0,
+    eat: 0,
+  };
+
+  function pad(n) { return String(Math.floor(n)).padStart(5, "0"); }
+
+  function showBanner(t, ms = 2200) {
+    bannerEl.textContent = t;
+    bannerEl.classList.add("show");
+    state.bannerT = ms / 1000;
+  }
+
+  let actx = null;
+  function chomp() {
+    beep(220, 0.07, "square", 0.05);
+    setTimeout(() => beep(160, 0.08, "square", 0.045), 70);
+    setTimeout(() => beep(140, 0.09, "triangle", 0.03), 150);
+  }
+
+  function beep(f, d, type = "square", v = 0.04) {
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = f; g.gain.value = v;
+      o.connect(g); g.connect(actx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + d);
+      o.stop(actx.currentTime + d);
+    } catch (e) {}
+  }
+
+  const BURGERS = [
+    { name: "BIG MAC", pts: 10, w: 34 },
+    { name: "NUG", pts: 6, w: 26 },
+    { name: "QP", pts: 12, w: 36 },
+    { name: "FILET", pts: 8, w: 32 },
+    { name: "MCCHICK", pts: 9, w: 33 },
+    { name: "ROYALE", pts: 15, w: 38 },
+  ];
+
+  function difficulty() {
+    const t = state.elapsed;
+    return {
+      fall: 140 + Math.min(260, t * 14),
+      spawn: Math.max(0.28, 1.05 - t * 0.035),
+      move: 420 * (state.slow > 0 ? 0.42 : 1),
+      hwChance: Math.min(0.22, 0.06 + t * 0.006),
+    };
+  }
+
+  function reset() {
+    state.mode = "play";
+    state.elapsed = 0;
+    state.score = 0;
+    state.lives = 3;
+    state.nickiX = W / 2;
+    state.nickiTarget = W / 2;
+    state.frozen = 0;
+    state.slow = 0;
+    state.hiss = 0;
+    state.flash = 0;
+    state.eat = 0;
+    state.spawnAcc = 0.4;
+    state.eventAcc = 4;
+    state.items = [];
+    state.particles = [];
+    scoreEl.textContent = pad(0);
+    livesEl.textContent = "3";
+    showBanner("CLOCK IN, ONIKA.");
+    beep(520, 0.08); beep(740, 0.1);
+  }
+
+  function spawnItem() {
+    const d = difficulty();
+    const r = Math.random();
+    let type, label, pts, w;
+    if (r < d.hwChance) {
+      type = "hw"; label = "HW"; pts = 0; w = 40;
+    } else if (r < d.hwChance + 0.08 && state.elapsed > 8) {
+      type = "hiss"; label = "HISS"; pts = 0; w = 36;
+    } else if (r < d.hwChance + 0.13 && state.elapsed > 12) {
+      type = "cardi"; label = "CARDI"; pts = 0; w = 34;
+    } else {
+      const b = BURGERS[Math.floor(Math.random() * BURGERS.length)];
+      type = "burger"; label = b.name; pts = b.pts; w = b.w;
+    }
+    const factoryL = 80, factoryR = W - 80;
+    state.items.push({
+      type, label, pts, w, h: type === "hw" ? 36 : 28,
+      x: factoryL + Math.random() * (factoryR - factoryL),
+      y: 118,
+      vy: d.fall * (0.85 + Math.random() * 0.35),
+      rot: (Math.random() - 0.5) * 0.6,
+      vr: (Math.random() - 0.5) * 2.2,
+    });
+  }
+
+  function triggerHiss() {
+    state.slow = 4.2;
+    state.hiss = 4.2;
+    state.flash = 0.25;
+    showBanner("HISS DROP — snake in the kitchen. Onika is sluggish.");
+    beep(90, 0.3, "sawtooth", 0.05);
+  }
+  function triggerCardi() {
+    state.frozen = 0.55;
+    state.flash = 0.2;
+    showBanner("CARDI DROP — do not speak.");
+    beep(180, 0.2, "square", 0.04);
+  }
+
+  function burst(x, y, c) {
+    for (let i = 0; i < 14; i++) {
+      state.particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 180,
+        vy: -40 - Math.random() * 160,
+        life: 0.35 + Math.random() * 0.35,
+        c,
+      });
+    }
+  }
+
+  function lose(why) {
+    state.mode = "dead";
+    showBanner(why);
+    beep(120, 0.35, "sawtooth", 0.05);
+    if (state.score > best) {
+      best = state.score;
+      try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
+      bestEl.textContent = pad(best);
+    }
+  }
+
+  // input
+  function bindHold(el, on, off) {
+    if (!el) return;
+    const d = (e) => { e.preventDefault(); e.stopPropagation(); on(); };
+    const u = (e) => { e.preventDefault(); off(); };
+    el.addEventListener("pointerdown", d);
+    el.addEventListener("pointerup", u);
+    el.addEventListener("pointerleave", u);
+    el.addEventListener("touchstart", d, { passive: false });
+    el.addEventListener("touchend", u, { passive: false });
+  }
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") state.keys.l = true;
+    if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") state.keys.r = true;
+    if (e.code === "Space" || e.key === " ") {
+      e.preventDefault();
+      if (state.mode !== "play") reset();
+    }
+  });
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") state.keys.l = false;
+    if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") state.keys.r = false;
+  });
+  bindHold(document.getElementById("btnLeft"), () => state.keys.l = true, () => state.keys.l = false);
+  bindHold(document.getElementById("btnRight"), () => state.keys.r = true, () => state.keys.r = false);
+
+  function pointerToX(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return ((src.clientX - r.left) / r.width) * W;
+  }
+  function aim(e) {
+    if (state.mode === "menu" || state.mode === "dead") { reset(); return; }
+    state.nickiTarget = pointerToX(e);
+  }
+  canvas.addEventListener("pointerdown", aim);
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.buttons || e.pressure > 0) state.nickiTarget = pointerToX(e);
+  });
+  canvas.addEventListener("touchstart", (e) => { e.preventDefault(); aim(e); }, { passive: false });
+  canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    if (state.mode === "play") state.nickiTarget = pointerToX(e);
+  }, { passive: false });
+
+  function nickiBox() {
+    return { x: state.nickiX - 28, y: H - 118, w: 56, h: 36 };
+  }
+
+  function update(dt) {
+    if (state.bannerT > 0) {
+      state.bannerT -= dt;
+      if (state.bannerT <= 0) bannerEl.classList.remove("show");
+    }
+    if (state.flash > 0) state.flash = Math.max(0, state.flash - dt);
+    state.belt += dt;
+
+    for (const p of state.particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.life -= dt;
+    }
+    state.particles = state.particles.filter((p) => p.life > 0);
+
+    if (state.mode !== "play") return;
+
+    state.elapsed += dt;
+    const d = difficulty();
+    if (state.frozen > 0) state.frozen = Math.max(0, state.frozen - dt);
+    if (state.slow > 0) state.slow = Math.max(0, state.slow - dt);
+    if (state.hiss > 0) state.hiss = Math.max(0, state.hiss - dt);
+    if (state.eat > 0) state.eat = Math.max(0, state.eat - dt);
+
+    if (state.frozen <= 0) {
+      if (state.keys.l) state.nickiTarget -= d.move * dt;
+      if (state.keys.r) state.nickiTarget += d.move * dt;
+      state.nickiTarget = Math.max(50, Math.min(W - 50, state.nickiTarget));
+      const follow = 1 - Math.pow(0.0008, dt);
+      state.nickiX += (state.nickiTarget - state.nickiX) * follow;
+    }
+
+    state.spawnAcc -= dt;
+    if (state.spawnAcc <= 0) {
+      spawnItem();
+      if (Math.random() < Math.min(0.45, state.elapsed / 40)) spawnItem();
+      state.spawnAcc = d.spawn * (0.7 + Math.random() * 0.5);
+    }
+
+    state.eventAcc -= dt;
+    if (state.eventAcc <= 0) {
+      if (Math.random() < 0.5) triggerHiss(); else triggerCardi();
+      state.eventAcc = 7 + Math.random() * 6;
+    }
+
+    const catcher = nickiBox();
+    for (const it of state.items) {
+      it.y += it.vy * dt;
+      it.rot += it.vr * dt;
+    }
+
+    const kept = [];
+    for (const it of state.items) {
+      const box = { x: it.x - it.w / 2, y: it.y - it.h / 2, w: it.w, h: it.h };
+      const hit = box.x < catcher.x + catcher.w && box.x + box.w > catcher.x &&
+                  box.y < catcher.y + catcher.h && box.y + box.h > catcher.y;
+      if (hit) {
+        if (it.type === "burger") {
+          state.score += it.pts;
+          scoreEl.textContent = pad(state.score);
+          state.eat = 0.42;
+          burst(it.x, it.y, "#f3c96a");
+          chomp();
+        } else if (it.type === "hw") {
+          burst(it.x, it.y, "#c23b4a");
+          lose("HOMEWORK CAUGHT. Favorite color is 5. You're done.");
+          return;
+        } else if (it.type === "hiss") {
+          triggerHiss();
+          burst(it.x, it.y, "#4a8a3a");
+        } else if (it.type === "cardi") {
+          triggerCardi();
+          burst(it.x, it.y, "#d45a9a");
+        }
+        continue;
+      }
+      if (it.y > H - 40) {
+        if (it.type === "burger") {
+          state.lives -= 1;
+          livesEl.textContent = String(Math.max(0, state.lives));
+          burst(it.x, H - 50, "#888");
+          beep(140, 0.12, "square", 0.03);
+          if (state.lives <= 0) {
+            lose("BURGERS ON THE FLOOR. Manager wants a word.");
+            return;
+          }
+        }
+        continue;
+      }
+      kept.push(it);
+    }
+    state.items = kept;
+  }
+
+  function px(x, y, w, h, c) {
+    const s = 2;
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(x / s) * s, Math.round(y / s) * s, Math.max(s, Math.round(w / s) * s), Math.max(s, Math.round(h / s) * s));
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawFactory() {
+    ctx.fillStyle = "#c23b2a";
+    ctx.fillRect(16, 0, W - 32, 100);
+    ctx.fillStyle = "#f3e4d4";
+    ctx.fillRect(16, 86, W - 32, 14);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 22px 'Archivo Black', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("McDonald's", W / 2, 40);
+    ctx.fillStyle = "#ffcf33";
+    ctx.font = "italic 13px 'Playfair Display', serif";
+    ctx.fillText("factory", W / 2, 62);
+    ctx.textAlign = "left";
+    for (let i = 0; i < 4; i++) {
+      const x = 50 + i * ((W - 100) / 3);
+      px(x - 10, 90, 20, 10, "#3a2010");
+    }
+    ctx.fillStyle = "#3a2018";
+    ctx.fillRect(24, 100, W - 48, 8);
+    ctx.fillStyle = "#c4a06a";
+    const off = (state.belt * 60) % 16;
+    for (let x = 24 - 16; x < W - 24; x += 16) ctx.fillRect(x + off, 102, 8, 4);
+  }
+
+  function drawNicki() {
+    const x = state.nickiX;
+    const y = H - 78;
+    const stun = state.frozen > 0;
+    const eating = state.eat > 0;
+    const chompOpen = eating && Math.floor(state.eat * 14) % 2 === 0;
+    ctx.save();
+    ctx.translate(Math.round(x / 2) * 2, Math.round((y + (stun ? 2 : 0)) / 2) * 2);
+
+    px(-20, 26, 40, 4, "rgba(0,0,0,.16)");
+
+    const skin = "#c17a52";
+    const skinD = "#a86240";
+    const skinL = "#d4926a";
+
+    px(-12, 8, 8, 18, skin);
+    px(4, 8, 8, 18, skin);
+    px(-14, 24, 10, 4, "#f4a0c8");
+    px(6, 24, 10, 4, "#f4a0c8");
+
+    px(-16, -16, 32, 26, "#f4b4d0");
+    px(-14, -8, 28, 6, "#e88ab8");
+
+    if (stun) {
+      px(-22, -14, 8, 16, skin);
+      px(14, -14, 8, 16, skin);
+    } else {
+      px(-22, -10, 8, 14, skin);
+      px(14, -10, 8, 14, skin);
+    }
+
+    // long pink hair, blocky
+    px(-20, -22, 8, 28, "#f7c2de");
+    px(-22, -8, 8, 22, "#ffe6f2");
+    px(12, -24, 8, 34, "#e36aa0");
+    px(16, 2, 6, 18, "#c43a6a");
+    px(-10, -42, 20, 10, "#f4b4d8");
+    px(-16, -38, 8, 10, "#ffd0e8");
+    px(8, -38, 8, 10, "#ffd0e8");
+
+    // head
+    px(-12, -36, 24, 22, skin);
+    px(-10, -34, 12, 8, skinL);
+    px(6, -28, 6, 8, skinD);
+
+    // tall MAGA hat
+    px(-20, -78, 40, 28, "#c62828");
+    px(-22, -54, 44, 8, "#b71c1c");
+    px(-18, -76, 36, 4, "#e53935");
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 12px 'Archivo Black', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("MAGA", 0, -58);
+    ctx.textAlign = "left";
+
+    // small eyes — 2px, not minstrel
+    if (stun) {
+      px(-8, -30, 6, 2, "#2a1810");
+      px(4, -30, 6, 2, "#2a1810");
+    } else {
+      px(-8, -32, 6, 2, "#4a2c1c");
+      px(4, -32, 6, 2, "#4a2c1c");
+      px(-6, -30, 4, 2, "#2a1810");
+      px(4, -30, 4, 2, "#2a1810");
+      px(-4, -30, 2, 2, "#e8d0c0");
+      px(6, -30, 2, 2, "#e8d0c0");
+    }
+    px(2, -26, 2, 4, skinD);
+
+    if (chompOpen) {
+      px(-4, -22, 10, 6, "#6a2a28");
+      px(-2, -20, 6, 2, "#3a1414");
+      px(-8, -18, 16, 4, "#e8b050");
+      px(-6, -14, 12, 4, "#6a3a18");
+      px(-8, -12, 16, 4, "#c47a32");
+    } else if (eating) {
+      px(-2, -20, 6, 2, "#c56b78");
+      px(0, -18, 2, 2, skinD);
+    } else {
+      px(-2, -20, 6, 2, "#c56b78");
+    }
+
+    ctx.restore();
+
+    if (state.hiss > 0) {
+      // snake beside her
+      const sx = x + 40, sy = y;
+      ctx.strokeStyle = "#4a8a3a";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy + 20);
+      ctx.quadraticCurveTo(sx + 10, sy - 10, sx + Math.sin(state.elapsed * 8) * 8, sy - 24);
+      ctx.stroke();
+      ctx.fillStyle = "#6ab04a";
+      ctx.beginPath(); ctx.arc(sx + Math.sin(state.elapsed * 8) * 8, sy - 24, 7, 0, Math.PI * 2); ctx.fill();
+      px(sx + Math.sin(state.elapsed * 8) * 8 - 2, sy - 26, 2, 2, "#1a0c14");
+    }
+  }
+
+  function drawItem(it) {
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot);
+    if (it.type === "burger") {
+      px(-it.w / 2, -6, it.w, 8, "#c47a32");
+      px(-it.w / 2 + 2, -2, it.w - 4, 6, "#6a3a18");
+      px(-it.w / 2 + 3, 0, it.w - 6, 3, "#3a8a3a");
+      px(-it.w / 2, 4, it.w, 7, "#e8b050");
+      px(-it.w / 2 + 4, -8, 4, 3, "#fff");
+      px(2, -8, 3, 3, "#fff");
+      ctx.fillStyle = "#1a0c14";
+      ctx.font = "5px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(it.label.slice(0, 7), 0, 18);
+    } else if (it.type === "hw") {
+      px(-18, -16, 36, 32, "#f4efe6");
+      px(-18, -16, 36, 6, "#c23b4a");
+      ctx.fillStyle = "#1a0c14";
+      ctx.font = "5px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("FAV", 0, 0);
+      ctx.fillText("COLOR?", 0, 8);
+      ctx.fillStyle = "#c23b4a";
+      ctx.fillText("5", 0, 16);
+    } else if (it.type === "hiss") {
+      ctx.fillStyle = "#4a8a3a";
+      ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
+      px(-4, -4, 3, 3, "#fff");
+      px(4, -4, 3, 3, "#fff");
+      ctx.strokeStyle = "#c23b4a";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(8, 4); ctx.lineTo(16, 8); ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.font = "5px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("HISS", 0, 22);
+    } else {
+      px(-16, -14, 32, 28, "#d45a9a");
+      px(-12, -8, 8, 8, "#f0c4b0");
+      px(4, -8, 8, 8, "#f0c4b0");
+      ctx.fillStyle = "#fff";
+      ctx.font = "5px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("CARDI", 0, 22);
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    if (state.hiss > 0) {
+      g.addColorStop(0, "#3a5040"); g.addColorStop(1, "#1a2818");
+    } else if (state.frozen > 0) {
+      g.addColorStop(0, "#6a3a58"); g.addColorStop(1, "#3a1830");
+    } else {
+      g.addColorStop(0, "#9ad4f0"); g.addColorStop(1, "#f3d7b0");
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // floor
+    ctx.fillStyle = "#6b5340";
+    ctx.fillRect(0, H - 52, W, 52);
+    ctx.fillStyle = "#8a6d52";
+    ctx.fillRect(0, H - 52, W, 6);
+
+    drawFactory();
+    for (const it of state.items) drawItem(it);
+    drawNicki();
+
+    for (const p of state.particles) {
+      ctx.globalAlpha = Math.max(0, p.life / 0.5);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(p.x, p.y, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    if (state.mode === "play") {
+      ctx.fillStyle = "rgba(26,12,20,.55)";
+      roundRect(10, H - 28, 160, 16, 3); ctx.fill();
+      ctx.fillStyle = "#f3c96a";
+      ctx.font = "7px 'Press Start 2P', monospace";
+      ctx.fillText("T " + state.elapsed.toFixed(1) + "s", 16, H - 16);
+    }
+
+    if (state.mode === "menu") {
+      ctx.fillStyle = "rgba(18,8,20,.62)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#fff";
+      ctx.font = "italic 28px 'Playfair Display', serif";
+      ctx.fillText("Onika Burgers", W / 2, H / 2 - 40);
+      ctx.fillStyle = "#ff4fa3";
+      ctx.font = "12px 'Archivo Black', sans-serif";
+      ctx.fillText("gag city drive-thru", W / 2, H / 2 - 12);
+      ctx.fillStyle = "#f7e8f0";
+      ctx.fillText("TAP / SPACE TO START", W / 2, H / 2 + 20);
+      ctx.fillStyle = "#e8c9a0";
+      ctx.font = "11px 'Archivo Black', sans-serif";
+      ctx.fillText("homework papers end the shift", W / 2, H / 2 + 48);
+      ctx.textAlign = "left";
+    }
+    if (state.mode === "dead") {
+      ctx.fillStyle = "rgba(18,8,20,.5)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#fff";
+      ctx.font = "14px 'Press Start 2P', monospace";
+      ctx.fillText("SHIFT OVER", W / 2, H / 2 - 24);
+      ctx.fillStyle = "#f3c96a";
+      ctx.font = "8px 'Press Start 2P', monospace";
+      ctx.fillText("score  " + pad(state.score), W / 2, H / 2 + 4);
+      ctx.fillStyle = "#f7e8f0";
+      ctx.fillText("TAP / SPACE  —  reopen", W / 2, H / 2 + 32);
+      ctx.textAlign = "left";
+    }
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${state.flash})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
